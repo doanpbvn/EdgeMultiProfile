@@ -4,10 +4,11 @@ A Python GUI application to **manage and open multiple isolated Microsoft Edge p
 
 ## Features
 
-- Add / rename / delete profiles.
+- Add / rename / delete profiles. Deleting a profile **closes its open Edge windows first**, then removes its data folder (no leftover locked files).
 - Open **one**, **multiple selected profiles**, or **all** with a single click.
 - Each profile is an independent Edge session (log in to many different accounts).
-- Options: Edge path (auto-detected), start URL, delay between launches.
+- Icon-only toolbar with hover tooltips.
+- Settings: Edge path (auto-detected), **multiple start URLs** (one per line, empty by default — opens each in a tab), delay between launches, and **Clear profiles folder** (closes all sessions and wipes `EdgeProfiles/profiles`).
 - Modern dark UI (customtkinter).
 - Data is stored **portably** in an `EdgeProfiles` folder next to the app.
 
@@ -35,8 +36,11 @@ Or manually:
 
 ```bash
 pip install -r requirements.txt
-python -m PyInstaller --noconfirm --onefile --windowed --name "EdgeMultiProfile" --icon "assets\icon.ico" --paths src --collect-submodules edge_multi --collect-all customtkinter main.py
+python tools/make_version.py
+python -m PyInstaller --noconfirm --onefile --windowed --name "EdgeMultiProfile" --icon "assets\icon.ico" --version-file "version_info.txt" --paths src --collect-submodules edge_multi --collect-all customtkinter main.py
 ```
+
+The exe version (shown in Windows file properties) comes from `__version__` in `src/edge_multi/__init__.py`; bump it there before building a new release.
 
 ### Regenerating the app icon
 

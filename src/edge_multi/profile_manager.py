@@ -5,11 +5,28 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import time
 import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from . import config
+
+
+def _safe_rmtree(path: Path, attempts: int = 3, delay_s: float = 0.6) -> bool:
+    """Remove a directory tree, retrying a few times in case of file locks.
+
+    Returns True if the directory no longer exists afterwards.
+    """
+    for i in range(attempts):
+        if not path.exists():
+            return True
+        shutil.rmtree(path, ignore_errors=True)
+        if not path.exists():
+            return True
+        if i < attempts - 1:
+            time.sleep(delay_s)
+    return not path.exists()
 
 
 @dataclass
@@ -118,11 +135,33 @@ class ProfileManager:
         profile.name = new_name
         self.save()
 
-    def delete(self, profile_id: str, remove_data: bool = True) -> None:
+    def delete(self, profile_id: str, remove_data: bool = True) -> bool:
+        """Delete a profile. Returns True if its data folder was fully removed."""
         profile = self.get(profile_id)
         if profile is None:
-            return
+            return True
+        removed = True
         if remove_data and profile.user_data_dir.exists():
-            shutil.rmtree(profile.user_data_dir, ignore_errors=True)
+            removed = _safe_rmtree(profile.user_data_dir)
         self._profiles = [p for p in self._profiles if p.id != profile_id]
         self.save()
+        return removed
+
+    def clear_all(self) -> bool:
+        """Remove every profile and wipe the whole profiles folder.
+
+        Returns True if the profiles folder was emptied successfully.
+        """
+        ok = True
+        for child in config.PROFILES_DIR.glob("*"):
+            if child.is_dir():
+                if not _safe_rmtree(child):
+                    ok = False
+            else:
+                try:
+                    child.unlink()
+                except OSError:
+                    ok = False
+        self._profiles = []
+        self.save()
+        return ok

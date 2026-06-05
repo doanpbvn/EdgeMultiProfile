@@ -38,9 +38,18 @@ _EDGE_CANDIDATES = [
 
 DEFAULT_SETTINGS = {
     "edge_path": "",          # empty = auto-detect
-    "start_url": "",          # URL opened on launch (empty = default page)
+    "start_urls": [],         # URLs opened on launch (empty = default page)
     "launch_delay_ms": 600,   # delay between launches to avoid congestion
 }
+
+
+def _clean_urls(value) -> list[str]:
+    """Normalize a value into a clean list of non-empty URL strings."""
+    if isinstance(value, str):
+        value = [value]
+    if not isinstance(value, (list, tuple)):
+        return []
+    return [str(u).strip() for u in value if str(u).strip()]
 
 
 def detect_edge_path() -> str:
@@ -67,15 +76,25 @@ def open_in_explorer(path: Path) -> None:
 def load_settings() -> dict:
     """Read settings.json, filling in any missing default values."""
     ensure_dirs()
-    settings = dict(DEFAULT_SETTINGS)
+    settings = {
+        k: (list(v) if isinstance(v, list) else v) for k, v in DEFAULT_SETTINGS.items()
+    }
+    raw: dict = {}
     if SETTINGS_FILE.is_file():
         try:
             with SETTINGS_FILE.open("r", encoding="utf-8") as f:
                 data = json.load(f)
             if isinstance(data, dict):
-                settings.update({k: data[k] for k in data if k in DEFAULT_SETTINGS})
+                raw = data
+                for k in DEFAULT_SETTINGS:
+                    if k in raw:
+                        settings[k] = raw[k]
         except (json.JSONDecodeError, OSError):
             pass
+    # Migrate the legacy single "start_url" string into the "start_urls" list.
+    if not settings.get("start_urls") and raw.get("start_url"):
+        settings["start_urls"] = _clean_urls(raw["start_url"])
+    settings["start_urls"] = _clean_urls(settings.get("start_urls"))
     if not settings.get("edge_path"):
         settings["edge_path"] = detect_edge_path()
     return settings
@@ -85,5 +104,6 @@ def save_settings(settings: dict) -> None:
     """Save settings.json."""
     ensure_dirs()
     clean = {k: settings.get(k, DEFAULT_SETTINGS[k]) for k in DEFAULT_SETTINGS}
+    clean["start_urls"] = _clean_urls(clean.get("start_urls"))
     with SETTINGS_FILE.open("w", encoding="utf-8") as f:
         json.dump(clean, f, ensure_ascii=False, indent=2)

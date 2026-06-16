@@ -10,8 +10,11 @@
     const input = document.getElementById("input");
     const box = document.getElementById("qrcode");
     btn.onclick = () => {
-      let text = input.value.trim();
-      text && (box.innerHTML = "", new QRCode(box, { text }));
+      const text = input.value.trim();
+      if (!text) return;
+      const sms = `sms:&body=${encodeURIComponent(text)}`;
+      box.innerHTML = "";
+      new QRCode(box, { text: sms });
     };
   </script>
 </body>

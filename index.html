@@ -2,26 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>QR Generator</title>
-  <style>
-    * { box-sizing: border-box; max-width: 360px; max-height: 600px; margin: 6px auto; border: none; }
-    textarea { width: 100%; min-height: 120px; padding: 12px; border: 1px solid #ccc;}
-    button { width: 100%; padding: 12px; background-color: aqua; font-weight: bold;}
-    #qr { display: none;} #qr.show { display: block; }
-  </style>
+  <style>* { box-sizing: border-box; max-width: 360px; margin: 6px auto;}</style>
 </head>
 <body>
-  <div>
-    <textarea id="input" placeholder="Enter text to copy..."></textarea>
-    <button id="btn">Generate QR</button>
-    <div id="qr"><div id="qrcode"></div></div>
-  </div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <textarea id="input" style="width: 100%; min-height: 100px; padding: 12px;"></textarea>
+    <button id="btn" style="width: 100%; padding: 12px;">Generate</button>
+    <div id="qrcode"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     const input = document.getElementById("input");
-    const qr = document.getElementById("qr");
     const box = document.getElementById("qrcode");
-    document.getElementById("btn").onclick = () => { const text = input.value.trim(); if (!text) return; box.innerHTML = ""; qr.classList.add("show"); new QRCode(box, { text, width: 320, height: 320, colorDark: "#0f172a", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.M }); };
+    btn.onclick = () => {
+      let text = input.value.trim();
+      text && (box.innerHTML = "", new QRCode(box, { text }));
+    };
   </script>
 </body>
 </html>
